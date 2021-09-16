@@ -1,0 +1,27 @@
+{
+  "name": "manifold-roadmap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "sam bacha",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "dotenv": "^10.0.0",
+    "lodash": "^4.17.21",
+    "logplease": "^1.2.15",
+    "moment": "^2.29.1",
+    "moment-range": "^4.0.2",
+    "octocat": "^1.2.1",
+    "yargs": "^17.1.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "prettier": "^2.4.0",
+    "prettier-eslint": "^13.0.0"
+  }
+}
