@@ -112,6 +112,7 @@ function getMilestonesListForProject(client, project) {
             due_on: e.due_on,
             html_url: e.html_url,
             state: e.state,
+            updated: e.updated_at,
             issues: [],
           };
         }
@@ -148,11 +149,13 @@ function getAllMilestoneIssues(client, project) {
           if (milestone) {
             milestone.issues.push({
               title: e.title,
+              body: e.body,
               repo: repo.repo,
               html_url: e.html_url,
               repository_url: e.repository_url,
               state: e.state,
               labels: e.labels,
+              updated: e.updated_at,
             });
           }
         }
@@ -185,8 +188,8 @@ function generateMilestonesSummary(project, options) {
   const opts = options || { useVisualProgressBars: false };
 
   let str = '#### Milestone Summary\n\n';
-  str += '| Status | Milestone | Goals | ETA |\n';
-  str += '| :---: | :--- | :---: | :---: |\n';
+  str += '| Status | Milestone | Goals | ETA | Last Updated |\n';
+  str += '| :---: | :--- | :---: | :---: | :---: |\n';
 
   str += Object.keys(project.milestones)
     .map((k, i) => {
@@ -203,6 +206,7 @@ function generateMilestonesSummary(project, options) {
       else milestone += `| ${m.closed_issues} / ${m.total_issues} `;
 
       milestone += `| ${new Date(m.due_on).toDateString()} `;
+      milestone += `| ${new Date(m.updated).toDateString()} `;
       milestone += '|\n';
       return milestone;
     })
@@ -211,6 +215,25 @@ function generateMilestonesSummary(project, options) {
 
   return str;
 }
+
+/// /////////
+function getTextByLine(target, line) {
+  const text = target;
+  return String(text.trim().split('\n')[line - 1]);
+}
+function stringToDate(_date, _format, _delimiter) {
+  const formatLowerCase = _format.toLowerCase();
+  const formatItems = formatLowerCase.split(_delimiter);
+  const dateItems = _date.split(_delimiter);
+  const monthIndex = formatItems.indexOf('mm');
+  const dayIndex = formatItems.indexOf('dd');
+  const yearIndex = formatItems.indexOf('yyyy');
+  let month = parseInt(dateItems[monthIndex]);
+  month -= 1;
+  const formatedDate = new Date(dateItems[yearIndex], month, dateItems[dayIndex]);
+  return formatedDate;
+}
+/// /////////
 
 function dataToMarkdown(projects, options) {
   const opts = options || {
@@ -257,15 +280,17 @@ function dataToMarkdown(projects, options) {
         ).toDateString()}**\n\n`;
 
         if (opts.listGoalsPerMilestone) {
-          milestone += '| Status | Goal | Labels | Repository |\n';
-          milestone += '| :---: | :--- | --- | --- |\n';
+          milestone += '| Status | Goal | Labels | Summary | Date |\n';
+          milestone += '| :---: | :--- | --- | :--- | :---: |\n';
           milestone
             += `${m.issues
               .map((issue, idx) => {
                 let text = `| ${
                   issue.state === 'open' ? symbols.notDone : symbols.done
                 } `;
-                text += `| [${issue.title}](${issue.html_url}) `;
+                text += `| [${issue.title.replace(/\|/g, '-')}](${
+                  issue.html_url
+                }) `;
                 text
                   += issue.labels.length > 0
                     ? `|${
@@ -273,12 +298,16 @@ function dataToMarkdown(projects, options) {
                         .map((label) => `\`${label.name}\``)
                         .join(', ')}`
                     : '| ';
-                text += `| <a href=https://github.com/${issue.repo}>${issue.repo}</a> |\n`;
+                text += `| ${getTextByLine(issue.body, 3).split('|')[2]} `;
+                const dateString = new Date(
+                  getTextByLine(issue.body, 3).split('|')[1],
+                ).toDateString();
+                text += `| ${dateString} |\n`;
                 return text;
               })
               .join('')}\n`;
         } else {
-          milestone += `See [milestone goals](https://waffle.io/${
+          milestone += `See [milestone goals](https://${
             roadmap.targetRepo
           }?milestone=${encodeURIComponent(
             m.title,
@@ -328,7 +357,7 @@ Promise.all(
     /* FINAL OUTPUT */
     logger.debug('Output:');
 
-    console.log(`# ${organization} - Roadmap`);
+    console.log(`# ${organization} - Account Status`);
     console.log('');
     console.log(
       `This document describes the current status and the upcoming milestones of the ${organization} project.`,
